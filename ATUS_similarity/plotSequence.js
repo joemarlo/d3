@@ -1,24 +1,6 @@
-// function to read data if we'd rather use fixed data
-function loadData() {
-    return Promise.all([
-        d3.csv("data/sequences.csv"),
-        d3.csv("data/demographics.csv"),
-        d3.csv("data/string_table.csv"),
-        d3.csv("data/modes.csv")
-    ]).then(datasets => {
-        store = {}
-        store.sequences = datasets[0];
-        store.demographics = datasets[1];
-        store.string_table = datasets[2];
-        store.modal_sequences = datasets[3];
-        console.log(store)
-        return store;
-    })
-}
-
 function getConfig() {
   let width = 700;
-  let height = 800;
+  let height = 500;
   let margin = {
     top: 10,
     bottom: 50,
@@ -48,23 +30,24 @@ function drawRects(data){
       `translate(${margin.left}px,${margin.top}px)`
     )
 
-  console.log('rect data:', data);
+  //console.log('rect data:', data);
 
   // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
-  var myGroups = d3.map(data, function(d){return d.time;}).keys()
-  var myVars = d3.map(data, function(d){return d.ID;}).keys()
+  let myGroups = d3.map(data, function(d){return d.time;}).keys()
+  let myVars = d3.map(data, function(d){return d.ID;}).keys()
 
-  // Build X scales and axis:
-  var x = d3.scaleBand()
+  // Build X scales
+  let x = d3.scaleBand()
     .range([ 0, bodyWidth ])
     .domain(myGroups)
     .padding(0.01);
+
   // remove and redraw X axis
   tickValues = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47]
   tickLabels = ["4am", 5, 6, 7, 8, 9, 10, 11, "12pm", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, "12am", 1, 2, 3]
-  d3.selectAll(".bottomaxis").remove()
+  d3.selectAll(".bottomaxisSequence").remove()
   container.append("g")
-    .attr("class", "bottomaxis")
+    .attr("class", "bottomaxisSequence")
     .style("font-size", 15)
     .attr("transform", "translate(0," + bodyHeight + ")")
     .call(d3.axisBottom(x)
@@ -86,24 +69,18 @@ function drawRects(data){
   container.append("text")
     .attr("class", "xaxis-label")
     .attr("transform",
-          "translate(" + (bodyWidth*1/2) + " ," + (bodyHeight + (margin.bottom*2/3)) + ")")
+          "translate(" + (bodyWidth*1/2) + " ," + (bodyHeight + (margin.bottom*3/4)) + ")")
     .style("text-anchor", "middle")
     .text("Time of day")
 
   // Build Y scales and axis:
-  var y = d3.scaleBand()
+  let y = d3.scaleBand()
     .range([ bodyHeight, 0 ])
     .domain(myVars)
     .padding(0.05);
-  /*
-  container.append("g")
-    .style("font-size", 15)
-    .call(d3.axisLeft(y).tickSize(0))
-    .select(".domain").remove()
-    */
 
   // create a tooltip
-  var tooltip = d3.select("#plot_sequence")
+  let tooltip = d3.select("#plot_sequence")
     .append("div")
     .style("opacity", 0)
     .attr("class", "tooltip")
@@ -112,6 +89,7 @@ function drawRects(data){
     .style("border-width", "2px")
     .style("border-radius", "5px")
     .style("padding", "5px")
+    .style("position", "absolute")
 
   // Three function that change the tooltip when user hover / move / leave a cell
   function mouseover(d){
@@ -130,9 +108,10 @@ function drawRects(data){
             "Married: " + d.married + "<br>" +
             "Household income: " + formatter.format(d.HH_income) + "<br>" +
             "Race: " + d.race + "<br>" +
-            "Education: " + d.education)
-      .style("left", (d3.mouse(this)[0]+70) + "px")
-      .style("top", (d3.mouse(this)[1]) + "px")
+            "Education: " + d.education + "<br>" +
+            "State: " + d.state)
+      .style("left", (event.pageX + 15) + "px") //(d3.mouse(this)[0]) + "px")
+      .style("top", (event.pageY + 15) + "px") //(d3.mouse(this)[1]) + "px")
   }
   function mouseleave(d){
     tooltip
@@ -209,7 +188,7 @@ function filterData(sequences, demographics, inputSequence, modal_sequences, str
 
   // collapse input sequence into a string
   inputSequenceAsString = Object.keys(inputSequence).map((key) => inputSequence[key].activity).join("")
-  console.log(inputSequenceAsString)
+  //console.log(inputSequenceAsString)
 
   // classify the user inputted string
   matching_cluster = classifySequence(inputSequenceAsString, modal_sequences)
@@ -282,6 +261,7 @@ function showData(data){
   // filter the data based on the user and draw the plot
   filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
   drawRects(filtered_data);
+  drawHistograms(filtered_data);
 
   // update plot on user input
   d3.select("#button_update").on("click", function() {
@@ -289,10 +269,28 @@ function showData(data){
     d3.selectAll('.tooltip').remove()
     inputSequence = retrieveUserSequence(string_table);
     filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
-    drawRects(filtered_data)
+    drawRects(filtered_data);
+    drawHistograms(filtered_data);
   });
   //addTitle()
 }
 
+// function to read data if we'd rather use fixed data
+function loadData() {
+    return Promise.all([
+        d3.csv("data/sequences.csv"),
+        d3.csv("data/demographics.csv"),
+        d3.csv("data/string_table.csv"),
+        d3.csv("data/modes.csv")
+    ]).then(datasets => {
+        store = {}
+        store.sequences = datasets[0];
+        store.demographics = datasets[1];
+        store.string_table = datasets[2];
+        store.modal_sequences = datasets[3];
+        console.log(store)
+        return store;
+    })
+}
 
 loadData().then(showData)

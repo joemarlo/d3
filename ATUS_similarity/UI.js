@@ -15,21 +15,21 @@ var arrColors = [
 // create 48 select lists
 // first set the select dropdown options
 var arrSelect = [
-  {val :"#D9A398", text: 'Sports, Exercise, and Recreation'},
-  {val :"#4F96C4", text: 'Personal Care'},
-  {val :"#6A3D9A", text: 'Sleep'},
-  {val :"#F79B5D", text: 'Socializing, Relaxing, and Leisure'},
-  {val :"#A788C0", text: 'Household Activities'},
-  {val :"#A6CEE3", text: 'Work'},
-  {val :"#4995A8", text: 'Professional & Personal Care Services'},
-  {val :"#FDA33F", text: 'Eating and Drinking'},
-  {val :"#EF595A", text: 'Caring For Household Member'},
-  {val :"#5D9E43", text: 'Consumer Purchases'},
-  {val :"#DE9A89", text: 'Other'},
-  {val :"#E63127", text: 'Caring For Nonhousehold Members'},
-  {val :"#A7D78D", text: 'Education'},
-  {val :"#69BB54", text: 'Volunteer'},
-  {val :"#FB820F", text: 'Religious and Spiritual'}
+  {val : "#D9A398", text: 'Sports, Exercise, and Recreation'},
+  {val : "#4F96C4", text: 'Personal Care'},
+  {val : "#6A3D9A", text: 'Sleep'},
+  {val : "#F79B5D", text: 'Socializing, Relaxing, and Leisure'},
+  {val : "#A788C0", text: 'Household Activities'},
+  {val : "#A6CEE3", text: 'Work'},
+  {val : "#4995A8", text: 'Professional & Personal Care Services'},
+  {val : "#FDA33F", text: 'Eating and Drinking'},
+  {val : "#EF595A", text: 'Caring For Household Member'},
+  {val : "#5D9E43", text: 'Consumer Purchases'},
+  {val : "#DE9A89", text: 'Other'},
+  {val : "#E63127", text: 'Caring For Nonhousehold Members'},
+  {val : "#A7D78D", text: 'Education'},
+  {val : "#69BB54", text: 'Volunteer'},
+  {val : "#FB820F", text: 'Religious and Spiritual'}
 ];
 
 // iterate through and create the select dropdowns and set them to the approporiate
