@@ -164,7 +164,7 @@ select {
 }
 
 #plot_histograms {
-
+  max-width: 80%;
 }
 
 #container_Q3 {

@@ -286,6 +286,8 @@ function showData(data){
   filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
   drawRects(filtered_data);
   drawHistograms(filtered_data);
+  //console.log('filtered', filtered_data)
+  drawBarPlots(filtered_data);
 
   // update plot on user input
   d3.select("#button_update").on("click", function() {
@@ -295,6 +297,7 @@ function showData(data){
     filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
     drawRects(filtered_data);
     drawHistograms(filtered_data);
+    drawBarPlots(filtered_data);
   });
 }
 
