@@ -1,6 +1,6 @@
 function getConfig() {
-  let width = 800;
-  let height = 500;
+  let width = 600;
+  let height = 450;
   let margin = {
     top: 70,
     bottom: 50,
@@ -17,8 +17,10 @@ function getConfig() {
   container = container
     .append("svg")
     .attr("class", "plotSequence")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .attr("viewBox", "0 0 600 450")
+    //.attr("width", width)
+    //.attr("height", height)
 
     return {width, height, margin, bodyHeight, bodyWidth, container}
   }
@@ -48,7 +50,6 @@ function drawRects(data){
   d3.selectAll(".bottomAxisSequence").remove()
   container.append("g")
     .attr("class", "bottomAxisSequence")
-    .style("font-size", 15)
     .attr("transform", "translate(0," + bodyHeight + ")")
     .call(d3.axisBottom(x)
       .tickSize(2)
@@ -79,7 +80,7 @@ function drawRects(data){
     .padding(0.05);
 
   // create a tooltip
-  let tooltip = d3.select("#plot_sequence")
+  let tooltip = d3.select("body")
     .append("div")
     .style("opacity", 0)
     .attr("class", "tooltip")
@@ -103,8 +104,8 @@ function drawRects(data){
             "Race: " + d.race + "<br>" +
             "Education: " + d.education + "<br>" +
             "State: " + d.state)
-      .style("left", (event.pageX + 15) + "px") //(d3.mouse(this)[0]) + "px")
-      .style("top", (event.pageY + 15) + "px") //(d3.mouse(this)[1]) + "px")
+      .style("left", (d3.event.pageX + 15) + "px") //(d3.mouse(this)[0]) + "px")
+      .style("top", (d3.event.pageY + 15) + "px") //(d3.mouse(this)[1]) + "px")
   }
   function mouseleave(d){
     tooltip
@@ -166,157 +167,3 @@ function drawRects(data){
       .style("max-width", bodyWidth)
       .text("Each square represents how an individual spent 30 minutes of their day");
 }
-
-function filterData(sequences, demographics, inputSequence, modal_sequences, string_table){
-
-  // collapse input sequence into a string
-  inputSequenceAsString = Object.keys(inputSequence).map((key) => inputSequence[key].activity).join("")
-  //console.log(inputSequenceAsString)
-
-  // classify the user inputted string
-  matching_cluster = classifySequence(inputSequenceAsString, modal_sequences)
-  console.log("Classified cluster: " + matching_cluster)
-
-  // filter data to just the matching cluster
-  sequences = sequences.filter(d => {return d.cluster === matching_cluster})
-  demographics = demographics.filter(d => {return d.cluster == matching_cluster})
-
-  // left join the two datasets
-  data = mergeOn(indexBy('ID', demographics), 'ID', sequences)
-
-  // add the user to the data
-  // create object out of the user input sequence
-  splitSeq = inputSequenceAsString.split("")
-  userSequence = [];
-  for (var i=0; i<48; i++){
-    userSequence[i] = {
-      ID: "user",
-      activity: splitSeq[i],
-      cluster: matching_cluster,
-      time: (i+1).toString()
-    };
-  }
-  //console.log("Parsed user sequence:", userSequence)
-
-  // add user object to middle of main data frame
-  let starting_row = Math.floor(data.length / 2)
-  for (var i=starting_row; i<(starting_row+48); i++){
-    data[i] = userSequence[(i-starting_row)]
-  }
-
-  // left join to get activity names
-  data = mergeOn(indexBy('activity', string_table), 'activity', data)
-  //console.log("Filtered data:", data)
-
-  /// sort the data based on string match score
-  // first group the data from ID
-  let grouped = d3.nest()
-    .key(d => d.ID)
-    .entries(data)
-
-  // for each ID, convert the activity to a string
-  let populationSequencesAsStrings = []
-  for (var i=0; i<grouped.length; i++){
-    popSequence = grouped[i]['values']
-    populationSequencesAsStrings[i] = Object.keys(popSequence).map((key) => popSequence[key].activity).join("")
-  }
-
-  // compute the similarity scores from the user input to the population of strings
-  //stringMatchScores = stringSimilarity.findBestMatch(inputSequenceAsString, populationSequencesAsStrings).ratings
-  stringMatchScores = populationSequencesAsStrings.map(string => getEditDistance(inputSequenceAsString, string))
-
-  // invert scores and place in object
-  stringMatchScores = stringMatchScores.map(function(score){return {rating : d3.max(stringMatchScores) - score}})
-
-  /// sort the data by these scores
-  // add ID column to string scores
-  for (var i=0; i<grouped.length; i++){
-    stringMatchScores[i]['ID'] = Object.values(grouped[i])[0]
-  }
-
-  // rank the scores
-  stringMatchScores = stringMatchScores.sort(function(a,b) { return +a.rating - +b.rating })
-  for (var i=0; i<stringMatchScores.length; i++){
-    stringMatchScores[i]['rank'] = i
-  }
-
-  // join back to original data and sort
-  rankedData = mergeOn(indexBy('ID', stringMatchScores), 'ID', data)
-  rankedData.sort(function(a,b) { return +a.rank - +b.rank })
-
-  // filter to just the top 50 ranked observations
-  maxRank = d3.max(rankedData, d => d.rank)
-  rankedFilteredData = rankedData.filter(d => {return d.rank >= (maxRank - 25)})
-
-  return rankedFilteredData
-}
-
-// retrieve user input
-function retrieveUserSequence(string_table){
-  userInputSequence = [];
-  for (var i=0; i<48; i++){
-    userInputSequence[i] = {
-      val: document.getElementById("user_input_"+(i+1)).value
-    }
-  }
-
-  // left join to get string names
-  userInputSequence = mergeOn(indexBy('val', string_table), 'val', userInputSequence)
-  console.log("Input user sequence:", userInputSequence)
-
-  return userInputSequence;
-}
-
-function showData(data){
-  sequences = data.sequences
-  demographics = data.demographics
-  string_table = data.string_table
-  //console.log(string_table)
-
-  // get modal strings per cluster and remove the columns key
-  modal_sequences = data.modal_sequences
-  delete modal_sequences.columns
-  modal_sequences = Object.keys(modal_sequences).map((key) => modal_sequences[key].sequence)
-  //console.log(modal_sequences)
-
-  // get input sequence
-  inputSequence = retrieveUserSequence(string_table)
-
-  // filter the data based on the user and draw the plot
-  filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
-  drawRects(filtered_data);
-  drawHistograms(filtered_data);
-  //console.log('filtered', filtered_data)
-  drawBarPlots(filtered_data);
-
-  // update plot on user input
-  d3.select("#button_update").on("click", function() {
-    d3.select("#plot_sequence").select("svg").remove()
-    d3.selectAll('.tooltip').remove()
-    inputSequence = retrieveUserSequence(string_table);
-    filtered_data = filterData(sequences, demographics, inputSequence, modal_sequences, string_table)
-    drawRects(filtered_data);
-    drawHistograms(filtered_data);
-    drawBarPlots(filtered_data);
-  });
-}
-
-// function to read data if we'd rather use fixed data
-function loadData() {
-    return Promise.all([
-        d3.csv("data/sequences.csv"),
-        d3.csv("data/demographics.csv"),
-        d3.csv("data/string_table.csv"),
-        d3.csv("data/modes.csv")
-    ]).then(datasets => {
-        store = {}
-        store.sequences = datasets[0];
-        store.demographics = datasets[1];
-        store.string_table = datasets[2];
-        store.modal_sequences = datasets[3];
-        console.log("Loaded data:", store)
-        return store;
-    })
-}
-
-loadData().then(showData)

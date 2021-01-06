@@ -1,11 +1,11 @@
 function getConfigHist() {
-   let width = 300;
+   let width = 250;
    let height = 200;
    let margin = {
        top: 10,
-       bottom: 100,
+       bottom: 70,
        left: 10,
-       right: 10
+       right: 20
    }
 
    //The body is the area that will be occupied by the bars.
@@ -51,7 +51,7 @@ function drawHistBars(data, nbins, scales, configHist, id, axisLabel){
   let histogram = d3.histogram()
         .value(d => +d[id])
         .domain(xScale.domain())
-        .thresholds(xScale.ticks(nbins));
+        //.thresholds(xScale.ticks(nbins));
 
   // get the binned data
   let bins = histogram(data);
@@ -59,20 +59,24 @@ function drawHistBars(data, nbins, scales, configHist, id, axisLabel){
   // remove and redraw X axis
   d3.selectAll(".bottomAxisHist" + id).remove()
   container.append("g")
-    .attr("class", "bottomAxisHist" + id)
+    .attr("class", "bottomAxisHist bottomAxisHist" + id)
     .attr("transform", "translate(" + margin.left + "," + bodyHeight + ")")
-    .call(d3.axisBottom(xScale));
+    .call(d3.axisBottom(xScale))
+    .selectAll("text")
+      .attr("transform", "translate(5,5)rotate(50)")
+      .style("text-anchor", "start");
 
-  // remove and redraw x axis label
+  /*// remove and redraw x axis label
   d3.selectAll(".xaxis_label_hist_"+id).remove()
   container.append("text")
       .attr("class", "xaxis_label xaxis_label_hist_"+id)
       .attr("transform",
             "translate(" + (bodyWidth*1/2) + " ," + (bodyHeight + (margin.bottom*3/4)) + ")")
       .text(axisLabel)
+    */
 
   // remove and redraw Y axis
-  yScale.domain([0, d3.max(bins, d => d.length)]);
+  yScale.domain([0, d3.max(bins, d => d.length)*1.4]); //this is a hack b/c I can't figure out why margins aren't working
 
   // join data with rect
   let rects = container
@@ -88,7 +92,6 @@ function drawHistBars(data, nbins, scales, configHist, id, axisLabel){
       .attr("transform", function(d) { return "translate(" + (xScale(d.x0) + margin.left) + "," + yScale(d.length) + ")"; })
       .attr("width", function(d) { return xScale(d.x1) - xScale(d.x0) -1 ; })
       .attr("height", function(d) { return bodyHeight - yScale(d.length); })
-      //.style("fill", "#394E48")
       .attr("class", "rectHist" + id)
       .on("mouseover", function(d){
         d3.select(this).transition()
@@ -108,17 +111,25 @@ function drawHistBars(data, nbins, scales, configHist, id, axisLabel){
   rects
     .exit()
     .remove()
+
+  // Add title to graph
+  d3.select("svg.plotHist"+id)
+    .append("text")
+      .attr("class", "plot_title_bar_plot plot_title_bar_plot_text")
+      .attr("x", 0) //margin.left
+      .attr("y", (margin.top * 1.3))
+      .text(axisLabel);
  }
 
 function drawHistograms(data) {
   // delete old plots
   d3.select("svg.plotHistage").remove()
-  d3.select("svg.plotHistn_child").remove()
+  d3.select("svg.plotHistHH_income").remove()
 
   // get config, scales then draw the plots
   let configHist = getConfigHist();
   let scales = getScalesHist(data, configHist, 'age');
   drawHistBars(data, 20, scales, configHist, id='age', axisLabel='Age');
-  scales = getScalesHist(data, configHist, 'n_child');
-  drawHistBars(data, null, scales, configHist, id='n_child', axisLabel='Number of children');
+  scales = getScalesHist(data, configHist, 'HH_income');
+  drawHistBars(data, null, scales, configHist, id='HH_income', axisLabel='Household income');
 }
